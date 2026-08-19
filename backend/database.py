@@ -27,7 +27,16 @@ CREATE TABLE IF NOT EXISTS incidents (
     ai_retry_requested INTEGER,
     ai_original_score INTEGER,
     ai_retry_score INTEGER,
-    ai_selected_photo TEXT
+    ai_selected_photo TEXT,
+    primary_email_status TEXT,
+    primary_sent_at TEXT,
+    acknowledged INTEGER DEFAULT 0,
+    acknowledged_at TEXT,
+    secondary_email_status TEXT,
+    secondary_sent_at TEXT,
+    campus_email_status TEXT,
+    campus_sent_at TEXT,
+    escalation_status TEXT
 );
 """
 
@@ -51,7 +60,7 @@ def get_latest_incident() -> dict | None:
     """Return the most recent incident row as a dict, or None if the table is empty."""
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM incidents ORDER BY created_at DESC LIMIT 1"
+            "SELECT * FROM incidents ORDER BY rowid DESC LIMIT 1"
         ).fetchone()
     if row is None:
         return None
@@ -153,3 +162,70 @@ def update_incident_retry_data(
             (ai_retry_score, ai_selected_photo, incident_id)
         )
         conn.commit()
+
+def get_incident(incident_id: str) -> dict | None:
+    """Return an incident by ID."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,)).fetchone()
+    if row is None:
+        return None
+    return dict(row)
+
+def update_escalation_status(
+    incident_id: str, 
+    escalation_status: str,
+    primary_email_status: str | None = None,
+    primary_sent_at: str | None = None,
+    secondary_email_status: str | None = None,
+    secondary_sent_at: str | None = None,
+    campus_email_status: str | None = None,
+    campus_sent_at: str | None = None,
+) -> None:
+    """Update the escalation status and email timestamps."""
+    query_parts = ["escalation_status = ?"]
+    params = [escalation_status]
+    
+    if primary_email_status is not None:
+        query_parts.append("primary_email_status = ?")
+        params.append(primary_email_status)
+    if primary_sent_at is not None:
+        query_parts.append("primary_sent_at = ?")
+        params.append(primary_sent_at)
+    if secondary_email_status is not None:
+        query_parts.append("secondary_email_status = ?")
+        params.append(secondary_email_status)
+    if secondary_sent_at is not None:
+        query_parts.append("secondary_sent_at = ?")
+        params.append(secondary_sent_at)
+    if campus_email_status is not None:
+        query_parts.append("campus_email_status = ?")
+        params.append(campus_email_status)
+    if campus_sent_at is not None:
+        query_parts.append("campus_sent_at = ?")
+        params.append(campus_sent_at)
+        
+    params.append(incident_id)
+    
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE incidents SET {', '.join(query_parts)} WHERE id = ?",
+            tuple(params)
+        )
+        conn.commit()
+
+def acknowledge_incident(incident_id: str, acknowledged_at: str) -> None:
+    """Mark an incident as acknowledged by the owner."""
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE incidents SET acknowledged = 1, acknowledged_at = ?, escalation_status = 'acknowledged' WHERE id = ?",
+            (acknowledged_at, incident_id)
+        )
+        conn.commit()
+
+def get_active_escalations() -> list[dict]:
+    """Return incidents that are not yet acknowledged and not completely done with escalation."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM incidents WHERE acknowledged = 0 AND escalation_status NOT IN ('acknowledged', 'campus_alerted', 'error') AND escalation_status IS NOT NULL"
+        ).fetchall()
+    return [dict(row) for row in rows]

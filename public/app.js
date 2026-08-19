@@ -1,8 +1,9 @@
-const API = 'http://localhost:8000';
+const API = '';
 
 let cameraStream = null;
 let latestLocation = null;
 let currentView = '';
+
 
 // ── Camera / Location ─────────────────────────────────────────────────────────
 
@@ -175,14 +176,165 @@ function bindShutdownView() {
 }
 
 async function bindOwnerView() {
-    // Fetch latest incident and inject AI card
+    // Fetch latest incident and populate DOM + AI card & Escalation card
     try {
         const res = await fetch(`${API}/api/incidents/latest`);
         const data = await res.json();
         const incident = data.incident;
-        if (incident) injectAiCard(incident);
+        if (!incident) return;
+
+        // 1. Update Subtitle (Device & Triggered time)
+        const timeStr = new Date(incident.created_at).toLocaleTimeString();
+        const subtitle = document.querySelector('main section p');
+        if (subtitle) {
+            subtitle.textContent = `Device: ${incident.device_name || 'Tsukuyomi Device'} • Triggered: ${timeStr}`;
+        }
+
+        // 2. Update Location Data
+        const spans = document.querySelectorAll('section span.text-on-surface');
+        if (spans.length >= 3) {
+            spans[0].textContent = `${incident.latitude}°`;
+            spans[1].textContent = `${incident.longitude}°`;
+            spans[2].textContent = `Within ${incident.accuracy ? Number(incident.accuracy).toFixed(1) : 15} meters`;
+        }
+
+        const mapBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Open Location'));
+        if (mapBtn) {
+            mapBtn.onclick = () => {
+                window.open(`https://www.google.com/maps?q=${incident.latitude},${incident.longitude}`, '_blank');
+            };
+        }
+
+        // 3. Update Security Snapshot Photo
+        const photoFilename = incident.ai_selected_photo || incident.photo_filename;
+        const photoUrl = `${API}/media/${photoFilename}`;
+        
+        const photoDivs = document.querySelectorAll('div.bg-cover');
+        if (photoDivs.length >= 2) {
+            photoDivs[1].style.backgroundImage = `url('${photoUrl}')`;
+        } else if (photoDivs.length === 1) {
+            photoDivs[0].style.backgroundImage = `url('${photoUrl}')`;
+        }
+
+        const viewImgBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('View Image'));
+        if (viewImgBtn) {
+            viewImgBtn.onclick = () => {
+                window.open(photoUrl, '_blank');
+            };
+        }
+
+        // 4. Inject dynamic AI card & Escalation card
+        const oldAi = document.getElementById('tsukuyomi-ai-card');
+        if (oldAi) oldAi.remove();
+        const oldEsc = document.getElementById('tsukuyomi-escalation-card');
+        if (oldEsc) oldEsc.remove();
+
+        injectAiCard(incident);
+        injectEscalationCard(incident);
     } catch (e) {
         console.error("Owner view fetch error:", e);
+    }
+}
+
+// ── Escalation Card Injection ──────────────────────────────────────────────────
+
+function injectEscalationCard(incident) {
+    const escStatus = incident.escalation_status;
+    const isAcknowledged = incident.acknowledged === 1;
+
+    let primaryText = incident.primary_email_status === 'sent' ? 'Sent ✓' : (incident.primary_email_status === 'failed' ? 'Failed ❌' : 'Pending');
+    
+    let ackText = 'Waiting';
+    if (isAcknowledged) ackText = 'Confirmed ✓';
+    else if (escStatus === 'secondary_alerted' || escStatus === 'campus_alerted') ackText = 'No response';
+
+    let secondaryText = 'Standby';
+    if (incident.secondary_email_status === 'sent') secondaryText = 'Alerted ✓';
+    else if (incident.secondary_email_status === 'failed') secondaryText = 'Failed ❌';
+
+    let campusText = 'Standby';
+    if (incident.campus_email_status === 'sent') campusText = 'Alerted ✓';
+    else if (incident.campus_email_status === 'failed') campusText = 'Failed ❌';
+    else if (!incident.campus_email_status && escStatus !== 'campus_alerted') campusText = 'Disabled';
+    
+    let timelineHtml = `
+        <div style="font-size:12px; color:#9CA8BE; margin-top:14px; border-top:1px solid rgba(255,255,255,0.08); padding-top:12px; display:flex; flex-col; gap:4px;">
+            <div>${new Date(incident.created_at).toLocaleTimeString()} — Protection triggered</div>
+            ${incident.primary_sent_at ? `<div>${new Date(incident.primary_sent_at).toLocaleTimeString()} — Primary contact notified</div>` : ''}
+            ${incident.secondary_sent_at ? `<div>${new Date(incident.secondary_sent_at).toLocaleTimeString()} — Secondary contact notified</div>` : ''}
+            ${incident.campus_sent_at ? `<div>${new Date(incident.campus_sent_at).toLocaleTimeString()} — Campus security notified</div>` : ''}
+            ${incident.acknowledged_at ? `<div>${new Date(incident.acknowledged_at).toLocaleTimeString()} — Owner acknowledged incident</div>
+                                          <div style="color:#4FD1A1;">${new Date(incident.acknowledged_at).toLocaleTimeString()} — Escalation stopped</div>` : ''}
+        </div>
+    `;
+
+    const card = document.createElement('div');
+    card.id = 'tsukuyomi-escalation-card';
+    card.style.cssText = `
+        margin: 20px 0;
+        background: rgba(15, 22, 38, 0.65);
+        border: 1px solid rgba(150, 170, 255, 0.15);
+        backdrop-filter: blur(16px);
+        border-radius: 22px;
+        padding: 22px;
+        font-family: 'Geist', sans-serif;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    `;
+    card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+            <span style="font-size:18px;">🚨</span>
+            <span style="font-size:15px;font-weight:600;color:#F5F7FF;letter-spacing:0.02em;">Smart Safety Escalation</span>
+            <span style="margin-left:auto;color:#8FA7FF;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;background:rgba(143,167,255,0.1);padding:2px 8px;border-radius:999px;">Tsukuyomi</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+            <span style="color:#9CA8BE;">Primary Contact</span>
+            <span style="color:#F5F7FF;font-weight:500;">${primaryText}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+            <span style="color:#9CA8BE;">Owner Acknowledgement</span>
+            <span style="color:${isAcknowledged ? '#4FD1A1' : '#F5F7FF'};font-weight:600;">${ackText}</span>
+        </div>
+        ${!isAcknowledged ? `
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+            <span style="color:#9CA8BE;">Secondary Contact</span>
+            <span style="color:#F5F7FF;">${secondaryText}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+            <span style="color:#9CA8BE;">Campus Security</span>
+            <span style="color:#F5F7FF;">${campusText}</span>
+        </div>
+        ` : `
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+            <span style="color:#9CA8BE;">Escalation Status</span>
+            <span style="color:#4FD1A1;font-weight:600;">Stopped (Owner Safe)</span>
+        </div>
+        `}
+        ${timelineHtml}
+        ${!isAcknowledged ? `
+        <button id="ack-btn" style="margin-top:16px; width:100%; padding:12px; background:linear-gradient(135deg, #4FD1A1, #22A37C); color:#05070B; border:none; border-radius:14px; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 0 20px rgba(79,209,161,0.3); transition:all 0.2s ease;">
+            I'm Safe — Acknowledge Alert
+        </button>
+        ` : ''}
+    `;
+
+    const main = document.querySelector('main') || document.body;
+    main.appendChild(card);
+
+    const ackBtn = document.getElementById('ack-btn');
+    if (ackBtn) {
+        ackBtn.addEventListener('click', async () => {
+            ackBtn.textContent = 'Acknowledging...';
+            ackBtn.disabled = true;
+            try {
+                await fetch(`${API}/api/incidents/${incident.id}/acknowledge`, { method: 'POST' });
+                // reload view
+                bindOwnerView();
+            } catch (e) {
+                console.error("Ack error:", e);
+                ackBtn.textContent = 'Error - Retry';
+                ackBtn.disabled = false;
+            }
+        });
     }
 }
 
@@ -201,35 +353,35 @@ function injectAiCard(incident) {
         const issues = JSON.parse(incident.ai_issues || '[]');
         issuesHtml = issues.filter(i => i !== 'none').map(i => {
             const label = i.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-            return `<span style="display:inline-block;padding:2px 10px;border-radius:999px;background:rgba(255,100,100,0.15);border:1px solid rgba(255,100,100,0.3);color:#ffb4ab;font-size:12px;margin:2px;">${label}</span>`;
+            return `<span style="display:inline-block;padding:3px 12px;border-radius:999px;background:rgba(240,106,120,0.12);border:1px solid rgba(240,106,120,0.3);color:#F06A78;font-size:12px;font-weight:500;margin:2px;">${label}</span>`;
         }).join('');
     } catch (e) {}
 
     let retryBadge = '';
     if (retryRequested && retryScore != null) {
         retryBadge = `
-        <div style="margin-top:12px;padding:10px 14px;background:rgba(102,219,176,0.08);border:1px solid rgba(102,219,176,0.2);border-radius:12px;">
-            <div style="color:#66dbb0;font-weight:600;font-size:13px;">✦ Improved automatically</div>
-            <div style="color:#c5c5d2;font-size:12px;margin-top:4px;">Initial: ${originalScore}/100 → Final: ${retryScore}/100</div>
-            <div style="color:#8f909c;font-size:11px;margin-top:2px;">Tsukuyomi detected that the first image was weak and captured one additional authorized frame.</div>
+        <div style="margin-top:14px;padding:12px 16px;background:rgba(79,209,161,0.08);border:1px solid rgba(79,209,161,0.25);border-radius:14px;">
+            <div style="color:#4FD1A1;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;">✦ Improved Automatically</div>
+            <div style="color:#F5F7FF;font-size:12px;margin-top:4px;">Initial score: ${originalScore}/100 → Final score: ${retryScore}/100</div>
+            <div style="color:#9CA8BE;font-size:11px;margin-top:4px;line-height:1.4;">Tsukuyomi AI detected initial capture issues and automatically captured a secondary authorized frame.</div>
         </div>`;
     }
 
     let cardBody = '';
     if (!aiStatus || aiStatus === 'unavailable' || aiStatus === 'error') {
-        cardBody = `<div style="color:#8f909c;font-size:13px;">AI analysis unavailable for this incident.</div>`;
+        cardBody = `<div style="color:#9CA8BE;font-size:13px;">AI analysis unavailable for this incident.</div>`;
     } else {
         const usable = score >= 60;
-        const scoreColor = usable ? '#66dbb0' : '#ffb4ab';
+        const scoreColor = usable ? '#4FD1A1' : '#F06A78';
         const statusLabel = usable ? 'Useful Evidence' : 'Limited Evidence';
         cardBody = `
-            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;">
-                <span style="font-size:28px;font-weight:700;color:${scoreColor};">${score}</span>
-                <span style="color:#8f909c;font-size:14px;">/ 100</span>
-                <span style="margin-left:auto;padding:2px 10px;border-radius:999px;background:${usable ? 'rgba(102,219,176,0.1)' : 'rgba(255,180,171,0.1)'};border:1px solid ${usable ? 'rgba(102,219,176,0.3)' : 'rgba(255,180,171,0.3)'};color:${scoreColor};font-size:12px;font-weight:600;">${statusLabel}</span>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;">
+                <span style="font-size:32px;font-weight:800;color:${scoreColor};">${score}</span>
+                <span style="color:#9CA8BE;font-size:14px;">/ 100</span>
+                <span style="margin-left:auto;padding:3px 12px;border-radius:999px;background:${usable ? 'rgba(79,209,161,0.12)' : 'rgba(240,106,120,0.12)'};border:1px solid ${usable ? 'rgba(79,209,161,0.3)' : 'rgba(240,106,120,0.3)'};color:${scoreColor};font-size:12px;font-weight:600;">${statusLabel}</span>
             </div>
-            ${issuesHtml ? `<div style="margin-bottom:10px;">${issuesHtml}</div>` : ''}
-            ${summary ? `<div style="color:#c5c5d2;font-size:13px;line-height:1.5;border-top:1px solid rgba(255,255,255,0.05);padding-top:10px;">${summary}</div>` : ''}
+            ${issuesHtml ? `<div style="margin-bottom:12px;">${issuesHtml}</div>` : ''}
+            ${summary ? `<div style="color:#9CA8BE;font-size:13px;line-height:1.6;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;">${summary}</div>` : ''}
             ${retryBadge}
         `;
     }
@@ -237,18 +389,20 @@ function injectAiCard(incident) {
     const card = document.createElement('div');
     card.id = 'tsukuyomi-ai-card';
     card.style.cssText = `
-        margin: 16px 0;
-        background: rgba(28, 32, 35, 0.9);
-        border: 1px solid rgba(197,197,210,0.1);
-        border-radius: 18px;
-        padding: 18px;
+        margin: 20px 0;
+        background: rgba(15, 22, 38, 0.65);
+        border: 1px solid rgba(150, 170, 255, 0.15);
+        backdrop-filter: blur(16px);
+        border-radius: 22px;
+        padding: 22px;
         font-family: 'Geist', sans-serif;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     `;
     card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-            <span style="font-size:16px;">🤖</span>
-            <span style="font-size:14px;font-weight:600;color:#e0e3e7;letter-spacing:0.02em;">AI Evidence Analysis</span>
-            <span style="margin-left:auto;color:#8f909c;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;">Tsukuyomi</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+            <span style="font-size:18px;">🤖</span>
+            <span style="font-size:15px;font-weight:600;color:#F5F7FF;letter-spacing:0.02em;">AI Evidence Intelligence</span>
+            <span style="margin-left:auto;color:#8FA7FF;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;background:rgba(143,167,255,0.1);padding:2px 8px;border-radius:999px;">Gemini</span>
         </div>
         ${cardBody}
     `;

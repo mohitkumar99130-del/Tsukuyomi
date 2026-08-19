@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 
+import asyncio
 from database import (
     init_db,
     get_latest_incident,
@@ -28,6 +29,10 @@ from database import (
     update_email_status,
     update_incident_ai_data,
     update_incident_retry_data,
+    update_escalation_status,
+    acknowledge_incident,
+    get_active_escalations,
+    get_incident
 )
 from mailer import send_alert
 from ai_analyzer import analyze_image, should_retry, select_best
@@ -53,9 +58,95 @@ app.add_middleware(
 )
 
 
+async def escalation_check_loop():
+    while True:
+        try:
+            active_incidents = get_active_escalations()
+            now = datetime.now(timezone.utc)
+            timeout = int(os.getenv("ESCALATION_TIMEOUT_SECONDS", "20"))
+            enable_campus = os.getenv("ENABLE_CAMPUS_ESCALATION", "false").lower() == "true"
+
+            for incident in active_incidents:
+                primary_sent = incident.get("primary_sent_at")
+                secondary_sent = incident.get("secondary_sent_at")
+                status = incident.get("escalation_status")
+                incident_id = incident["id"]
+
+                def parse_time(ts_str):
+                    if not ts_str:
+                        return None
+                    return datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                
+                # Check secondary escalation
+                if status in ("waiting_for_acknowledgement", "primary_delivery_failed"):
+                    if status == "primary_delivery_failed" or (primary_sent and (now - parse_time(primary_sent)).total_seconds() >= timeout):
+                        # Time to send secondary
+                        print(f"[escalation] Timeout reached for {incident_id}. Sending secondary alert.")
+                        ai_res = None
+                        if incident.get("ai_status") in ("analyzed", "ok"):
+                            ai_res = {
+                                "status": "ok",
+                                "quality_score": incident.get("ai_quality_score"),
+                                "context_summary": incident.get("ai_context_summary", ""),
+                                "issues": json.loads(incident.get("ai_issues") or "[]"),
+                            }
+                        ok, err = send_alert(
+                            incident_id=incident_id,
+                            device_name=incident.get("device_name", ""),
+                            latitude=incident.get("latitude", 0),
+                            longitude=incident.get("longitude", 0),
+                            accuracy=incident.get("accuracy", 0),
+                            captured_at=incident.get("created_at", ""),
+                            photo_path=str(UPLOADS_DIR / (incident.get("ai_selected_photo") or incident.get("photo_filename"))),
+                            ai_result=ai_res,
+                            alert_type="secondary"
+                        )
+                        update_escalation_status(
+                            incident_id,
+                            escalation_status="secondary_alerted",
+                            secondary_email_status="sent" if ok else "failed",
+                            secondary_sent_at=now.isoformat()
+                        )
+                
+                # Check campus escalation
+                elif status == "secondary_alerted" and enable_campus:
+                    if secondary_sent and (now - parse_time(secondary_sent)).total_seconds() >= timeout:
+                        print(f"[escalation] Secondary timeout reached for {incident_id}. Sending campus alert.")
+                        ai_res = None
+                        if incident.get("ai_status") in ("analyzed", "ok"):
+                            ai_res = {
+                                "status": "ok",
+                                "quality_score": incident.get("ai_quality_score"),
+                                "context_summary": incident.get("ai_context_summary", ""),
+                                "issues": json.loads(incident.get("ai_issues") or "[]"),
+                            }
+                        ok, err = send_alert(
+                            incident_id=incident_id,
+                            device_name=incident.get("device_name", ""),
+                            latitude=incident.get("latitude", 0),
+                            longitude=incident.get("longitude", 0),
+                            accuracy=incident.get("accuracy", 0),
+                            captured_at=incident.get("created_at", ""),
+                            photo_path=str(UPLOADS_DIR / (incident.get("ai_selected_photo") or incident.get("photo_filename"))),
+                            ai_result=ai_res,
+                            alert_type="campus"
+                        )
+                        update_escalation_status(
+                            incident_id,
+                            escalation_status="campus_alerted",
+                            campus_email_status="sent" if ok else "failed",
+                            campus_sent_at=now.isoformat()
+                        )
+
+        except Exception as e:
+            print(f"[escalation_loop] Error: {e}")
+        await asyncio.sleep(5)
+
+
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     init_db()
+    asyncio.create_task(escalation_check_loop())
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
@@ -287,11 +378,32 @@ def _send_email_and_update(
         retry_occurred=retry_occurred,
         original_score=original_score,
         final_score=final_score,
+        alert_type="primary",
     )
     status = "sent" if ok else "failed"
     update_email_status(incident_id, status, err)
+    
+    escalation_status = "waiting_for_acknowledgement" if ok else "primary_delivery_failed"
+    update_escalation_status(
+        incident_id,
+        escalation_status=escalation_status,
+        primary_email_status=status,
+        primary_sent_at=datetime.now(timezone.utc).isoformat(),
+    )
+    
     print(f"[email] status={status}" + (f" err={err}" if err else ""))
 
+# ── Acknowledge ───────────────────────────────────────────────────────────────
+
+@app.post("/api/incidents/{incident_id}/acknowledge")
+def acknowledge(incident_id: str):
+    incident = get_incident(incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+        
+    acknowledge_incident(incident_id, datetime.now(timezone.utc).isoformat())
+    print(f"[escalation] Incident {incident_id} acknowledged by owner. Escalation stopped.")
+    return {"status": "ok"}
 
 # ── Media serving ─────────────────────────────────────────────────────────────
 

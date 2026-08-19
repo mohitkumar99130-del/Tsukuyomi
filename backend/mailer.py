@@ -68,9 +68,11 @@ def send_alert(
     retry_occurred: bool = False,
     original_score: Optional[int] = None,
     final_score: Optional[int] = None,
+    alert_type: str = "primary",
 ) -> tuple[bool, str]:
     """
     Send a Tsukuyomi security alert email.
+    alert_type can be: "primary", "secondary", "campus".
     Returns (success: bool, error_message: str).
     """
     smtp_host     = _cfg("SMTP_HOST")
@@ -78,18 +80,33 @@ def send_alert(
     smtp_user     = _cfg("SMTP_USERNAME")
     smtp_pass     = _cfg("SMTP_PASSWORD")
     smtp_from     = _cfg("SMTP_FROM") or smtp_user
-    trusted_email = _cfg("TRUSTED_EMAIL")
-    use_tls       = _cfg("SMTP_USE_TLS", "true").lower() != "false"
+    
+    if alert_type == "primary":
+        target_email = _cfg("PRIMARY_TRUSTED_EMAIL") or _cfg("TRUSTED_EMAIL")
+        subject = "Tsukuyomi Security Alert — Protection Triggered"
+        body_intro = "Protection has been triggered on:"
+    elif alert_type == "secondary":
+        target_email = _cfg("SECONDARY_TRUSTED_EMAIL")
+        subject = "Tsukuyomi Escalation — Device Alert Unacknowledged"
+        body_intro = "A Tsukuyomi device-protection incident has not yet been acknowledged by the owner.\n\nProtection was triggered on:"
+    elif alert_type == "campus":
+        target_email = _cfg("CAMPUS_SECURITY_EMAIL")
+        subject = "Tsukuyomi Campus Safety Alert — Unacknowledged Device Incident"
+        body_intro = "This notification was sent to a safety contact explicitly configured by the device owner.\n\nProtection was triggered on:"
+    else:
+        return False, f"Unknown alert_type: {alert_type}"
+
+    use_tls = _cfg("SMTP_USE_TLS", "true").lower() != "false"
 
     missing = [k for k, v in {
         "SMTP_HOST": smtp_host,
         "SMTP_USERNAME": smtp_user,
         "SMTP_PASSWORD": smtp_pass,
-        "TRUSTED_EMAIL": trusted_email,
+        f"{alert_type.upper()}_EMAIL": target_email,
     }.items() if not v]
 
     if missing:
-        msg = f"SMTP not configured. Missing env vars: {', '.join(missing)}"
+        msg = f"SMTP or target email not configured. Missing env vars: {', '.join(missing)}"
         print(f"[mailer] {msg}")
         return False, msg
 
@@ -108,13 +125,13 @@ def send_alert(
     )
 
     msg = EmailMessage()
-    msg["Subject"] = "Tsukuyomi Security Alert — Protection Triggered"
+    msg["Subject"] = subject
     msg["From"]    = smtp_from
-    msg["To"]      = trusted_email
+    msg["To"]      = target_email
 
     body = f"""TSUKUYOMI SECURITY ALERT
 
-Protection has been triggered on:
+{body_intro}
 
   Device:      {device_name}
   Triggered:   {captured_at}
@@ -158,7 +175,7 @@ Incident ID: {incident_id}
                 server.login(smtp_user, smtp_pass)
                 server.send_message(msg)
 
-        print(f"[mailer] Alert sent to {trusted_email} for incident {incident_id}")
+        print(f"[mailer] {alert_type.capitalize()} alert sent to {target_email} for incident {incident_id}")
         return True, ""
 
     except Exception as exc:
