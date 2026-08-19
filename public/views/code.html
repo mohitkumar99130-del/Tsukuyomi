@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Powering off...</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-surface": "#e0e3e7",
+                    "secondary-container": "#22a37c",
+                    "error-container": "#93000a",
+                    "secondary-fixed-dim": "#66dbb0",
+                    "surface-container-lowest": "#0b0f12",
+                    "surface-container-highest": "#313538",
+                    "primary-fixed": "#dde1ff",
+                    "outline-variant": "#454651",
+                    "on-error": "#690005",
+                    "on-secondary-container": "#003122",
+                    "on-tertiary-fixed": "#291800",
+                    "surface-dim": "#101417",
+                    "tertiary-container": "#e1a859",
+                    "on-tertiary": "#452b00",
+                    "inverse-on-surface": "#2d3134",
+                    "tertiary-fixed-dim": "#f7bc6a",
+                    "surface-container": "#1c2023",
+                    "on-secondary-fixed-variant": "#00513b",
+                    "outline": "#8f909c",
+                    "surface-container-low": "#181c1f",
+                    "on-tertiary-fixed-variant": "#633f00",
+                    "on-secondary": "#003828",
+                    "tertiary": "#ffc372",
+                    "surface": "#101417",
+                    "on-primary": "#152973",
+                    "background": "#101417",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-container": "#2d3f88",
+                    "primary-fixed-dim": "#b8c3ff",
+                    "on-background": "#e0e3e7",
+                    "on-secondary-fixed": "#002116",
+                    "tertiary-fixed": "#ffddb4",
+                    "surface-container-high": "#262a2e",
+                    "primary": "#c2cbff",
+                    "on-primary-fixed": "#001355",
+                    "primary-container": "#9daeff",
+                    "secondary-fixed": "#84f8cb",
+                    "surface-variant": "#313538",
+                    "surface-bright": "#363a3d",
+                    "inverse-primary": "#4859a4",
+                    "on-surface": "#e0e3e7",
+                    "error": "#ffb4ab",
+                    "on-tertiary-container": "#613d00",
+                    "on-surface-variant": "#c5c5d2",
+                    "secondary": "#66dbb0",
+                    "on-primary-fixed-variant": "#2f418a",
+                    "surface-tint": "#b8c3ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-margin": "20px",
+                    "gutter": "16px",
+                    "stack-md": "16px",
+                    "stack-sm": "8px",
+                    "stack-xl": "40px",
+                    "stack-lg": "24px"
+            },
+            "fontFamily": {
+                    "body-lg": [
+                            "Geist"
+                    ],
+                    "label-xs": [
+                            "Geist"
+                    ],
+                    "display-lg-mobile": [
+                            "Geist"
+                    ],
+                    "headline-sm": [
+                            "Geist"
+                    ],
+                    "body-md": [
+                            "Geist"
+                    ],
+                    "display-lg": [
+                            "Geist"
+                    ],
+                    "label-sm": [
+                            "Geist"
+                    ]
+            },
+            "fontSize": {
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "letterSpacing": "0",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-xs": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "36px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-sm": [
+                            "18px",
+                            {
+                                    "lineHeight": "24px",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "0",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "label-sm": [
+                            "13px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.04em",
+                                    "fontWeight": "500"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            /* Force system font to override any app-specific typography */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: #000000;
+        }
+        
+        .os-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-top-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+<body class="h-[100dvh] w-full m-0 p-0 overflow-hidden flex flex-col items-center justify-center">
+<div class="flex flex-col items-center gap-6 opacity-90">
+<div class="os-spinner"></div>
+<p class="text-[#e5e5e5] text-[15px] tracking-wide font-normal">Powering off...</p>
+</div>
+</body></html>

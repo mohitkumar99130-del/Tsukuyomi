@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tsukuyomi - Protection Active</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-surface": "#e0e3e7",
+                        "secondary-container": "#22a37c",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#66dbb0",
+                        "surface-container-lowest": "#0b0f12",
+                        "surface-container-highest": "#313538",
+                        "primary-fixed": "#dde1ff",
+                        "outline-variant": "#454651",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#003122",
+                        "on-tertiary-fixed": "#291800",
+                        "surface-dim": "#101417",
+                        "tertiary-container": "#e1a859",
+                        "on-tertiary": "#452b00",
+                        "inverse-on-surface": "#2d3134",
+                        "tertiary-fixed-dim": "#f7bc6a",
+                        "surface-container": "#1c2023",
+                        "on-secondary-fixed-variant": "#00513b",
+                        "outline": "#8f909c",
+                        "surface-container-low": "#181c1f",
+                        "on-tertiary-fixed-variant": "#633f00",
+                        "on-secondary": "#003828",
+                        "tertiary": "#ffc372",
+                        "surface": "#101417",
+                        "on-primary": "#152973",
+                        "background": "#101417",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-container": "#2d3f88",
+                        "primary-fixed-dim": "#b8c3ff",
+                        "on-background": "#e0e3e7",
+                        "on-secondary-fixed": "#002116",
+                        "tertiary-fixed": "#ffddb4",
+                        "surface-container-high": "#262a2e",
+                        "primary": "#c2cbff",
+                        "on-primary-fixed": "#001355",
+                        "primary-container": "#9daeff",
+                        "secondary-fixed": "#84f8cb",
+                        "surface-variant": "#313538",
+                        "surface-bright": "#363a3d",
+                        "inverse-primary": "#4859a4",
+                        "on-surface": "#e0e3e7",
+                        "error": "#ffb4ab",
+                        "on-tertiary-container": "#613d00",
+                        "on-surface-variant": "#c5c5d2",
+                        "secondary": "#66dbb0",
+                        "on-primary-fixed-variant": "#2f418a",
+                        "surface-tint": "#b8c3ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-margin": "20px",
+                        "gutter": "16px",
+                        "stack-md": "16px",
+                        "stack-sm": "8px",
+                        "stack-xl": "40px",
+                        "stack-lg": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Geist"],
+                        "label-xs": ["Geist"],
+                        "display-lg-mobile": ["Geist"],
+                        "headline-sm": ["Geist"],
+                        "body-md": ["Geist"],
+                        "display-lg": ["Geist"],
+                        "label-sm": ["Geist"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400" }],
+                        "label-xs": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "400" }],
+                        "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                        "label-sm": ["13px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Geist', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            stroke-width: 1.5px;
+        }
+
+        .material-symbols-outlined.fill-1 {
+            font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Pulse Animation for Status */
+        @keyframes subtle-pulse {
+            0% { transform: scale(1); opacity: 0.1; }
+            50% { transform: scale(1.1); opacity: 0.2; }
+            100% { transform: scale(1); opacity: 0.1; }
+        }
+
+        @keyframes orbit-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .orbit-ring {
+            animation: orbit-spin 20s linear infinite;
+        }
+
+        .pulse-effect {
+            animation: subtle-pulse 3s ease-in-out infinite;
+        }
+        
+        .status-dot-pulse {
+            animation: statusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col relative overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Ambient Background Lighting -->
+<div class="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10 opacity-30"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-container-margin h-14 bg-background/80 backdrop-blur-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary opacity-100" data-icon="brightness_2">brightness_2</span>
+<span class="font-headline-sm text-headline-sm-mobile tracking-widest text-primary">TSUKUYOMI</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-container-margin pt-stack-xl pb-32 flex flex-col items-center justify-start max-w-2xl mx-auto w-full mt-14 z-10">
+<!-- Visual Status Indicator (Lunar Orbit) -->
+<div class="relative w-64 h-64 mt-stack-lg mb-stack-xl flex items-center justify-center">
+<!-- Pulsing Aura -->
+<div class="absolute inset-0 rounded-full bg-secondary pulse-effect mix-blend-screen"></div>
+<!-- Orbit Rings -->
+<div class="absolute w-56 h-56 rounded-full border border-surface-variant/50 orbit-ring">
+<div class="absolute top-0 left-1/2 w-1.5 h-1.5 -ml-[3px] -mt-[3px] rounded-full bg-primary/40 shadow-[0_0_8px_rgba(194,203,255,0.4)]"></div>
+</div>
+<div class="absolute w-40 h-40 rounded-full border border-surface-variant/30 orbit-ring" style="animation-direction: reverse; animation-duration: 25s;">
+<div class="absolute bottom-0 left-1/2 w-1 h-1 -ml-[2px] -mb-[2px] rounded-full bg-secondary/60 shadow-[0_0_6px_rgba(102,219,176,0.6)]"></div>
+</div>
+<!-- Central Core -->
+<div class="absolute w-24 h-24 rounded-full bg-surface-container-low border border-surface-variant flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] z-10">
+<span class="material-symbols-outlined text-secondary text-4xl status-dot-pulse fill-1" data-icon="shield">shield</span>
+</div>
+</div>
+<!-- Status Typography -->
+<div class="text-center mb-stack-xl flex flex-col gap-stack-sm">
+<h1 class="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-secondary">Protection Active</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Tsukuyomi is ready if this device is taken.</p>
+</div>
+<!-- Security Modules List -->
+<div class="w-full flex flex-col gap-stack-sm mb-stack-xl">
+<!-- Camera Status -->
+<div class="w-full h-[52px] bg-surface rounded-xl border border-surface-variant/50 flex items-center justify-between px-gutter">
+<div class="flex items-center gap-gutter text-on-surface">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="camera">camera</span>
+<span class="font-label-sm text-label-sm">Camera</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-xs text-label-xs text-secondary opacity-80">Ready</span>
+<div class="w-2 h-2 rounded-full bg-secondary status-dot-pulse shadow-[0_0_6px_rgba(102,219,176,0.5)]"></div>
+</div>
+</div>
+<!-- Location Status -->
+<div class="w-full h-[52px] bg-surface rounded-xl border border-surface-variant/50 flex items-center justify-between px-gutter">
+<div class="flex items-center gap-gutter text-on-surface">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="location_on">location_on</span>
+<span class="font-label-sm text-label-sm">Location</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-xs text-label-xs text-secondary opacity-80">Ready</span>
+<div class="w-2 h-2 rounded-full bg-secondary status-dot-pulse shadow-[0_0_6px_rgba(102,219,176,0.5)]"></div>
+</div>
+</div>
+<!-- Trusted Contact Status -->
+<div class="w-full h-[52px] bg-surface rounded-xl border border-surface-variant/50 flex items-center justify-between px-gutter">
+<div class="flex items-center gap-gutter text-on-surface">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="group">group</span>
+<span class="font-label-sm text-label-sm">Trusted Contact</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-xs text-label-xs text-secondary opacity-80">Connected</span>
+<div class="w-2 h-2 rounded-full bg-secondary status-dot-pulse shadow-[0_0_6px_rgba(102,219,176,0.5)]"></div>
+</div>
+</div>
+</div>
+<!-- Demo Mode Section -->
+<div class="w-full mt-stack-md pt-stack-lg border-t border-surface-variant/30 flex flex-col items-center">
+<p class="font-label-xs text-label-xs text-on-surface-variant text-center mb-stack-md opacity-60">
+                For this web prototype, this control represents holding the physical power button.
+            </p>
+<button class="w-full h-[56px] bg-primary text-background font-label-sm text-label-sm rounded-xl flex items-center justify-center gap-2 hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="power_settings_new">power_settings_new</span>
+                Simulate Power Off
+            </button>
+</div>
+<!-- Disclaimer -->
+<div class="mt-stack-xl text-center w-full">
+<p class="font-label-xs text-label-xs text-on-surface-variant/40">
+                Camera and location access were authorized by the device owner.
+            </p>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-container-margin py-4 bg-surface-container-low/90 dark:bg-surface-container-low/90 backdrop-blur-xl border-t border-outline-variant/20 rounded-t-xl md:hidden">
+<button class="flex flex-col items-center justify-center text-primary bg-secondary-container/20 rounded-full p-2 hover:text-primary transition-colors scale-95 duration-200 active:opacity-80">
+<span class="material-symbols-outlined fill-1" data-icon="shield">shield</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-colors scale-95 duration-200 active:opacity-80">
+<span class="material-symbols-outlined" data-icon="radar">radar</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-colors scale-95 duration-200 active:opacity-80">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-colors scale-95 duration-200 active:opacity-80">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</nav>
+<!-- Desktop Nav Fallback (Hidden on Mobile) -->
+<nav class="hidden md:flex fixed top-0 right-container-margin h-14 items-center gap-6 z-50">
+<button class="text-primary font-label-sm text-label-sm hover:opacity-80 transition-opacity">Protection</button>
+<button class="text-on-surface-variant font-label-sm text-label-sm hover:opacity-80 transition-opacity">Radar</button>
+<button class="text-on-surface-variant font-label-sm text-label-sm hover:opacity-80 transition-opacity">History</button>
+<button class="text-on-surface-variant font-label-sm text-label-sm hover:opacity-80 transition-opacity">Settings</button>
+</nav>
+<script>
+        // Simulate button press for the prototype
+        const simulateBtn = document.querySelector('button.bg-primary');
+        if(simulateBtn) {
+            simulateBtn.addEventListener('click', () => {
+                simulateBtn.innerHTML = '<span class="material-symbols-outlined animate-spin" data-icon="progress_activity">progress_activity</span> Initiating...';
+                simulateBtn.classList.add('opacity-50', 'pointer-events-none');
+                setTimeout(() => {
+                    simulateBtn.innerHTML = '<span class="material-symbols-outlined" data-icon="lock">lock</span> Device Locked';
+                    simulateBtn.classList.remove('bg-primary', 'text-background');
+                    simulateBtn.classList.add('bg-surface-variant', 'text-on-surface');
+                }, 1500);
+            });
+        }
+    </script>
+</body></html>

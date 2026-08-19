@@ -1,0 +1,25 @@
+{
+  "name": "tsukuyomi",
+  "version": "1.0.0",
+  "description": "An Android app that turns phone theft against the thief. When someone tries to power off a stolen phone, it fakes shutdown — while secretly capturing their photo, tracking live location, locking sensitive apps, and alerting trusted contacts. Protects physical safety, data, and irreplaceable memories, all while the thief believes the phone is dead.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mohitkumar99130-del/Tsukuyomi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mohitkumar99130-del/Tsukuyomi/issues"
+  },
+  "homepage": "https://github.com/mohitkumar99130-del/Tsukuyomi#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
