@@ -19,7 +19,15 @@ CREATE TABLE IF NOT EXISTS incidents (
     accuracy REAL,
     photo_filename TEXT,
     email_status TEXT,
-    email_error TEXT
+    email_error TEXT,
+    ai_status TEXT,
+    ai_quality_score INTEGER,
+    ai_issues TEXT,
+    ai_context_summary TEXT,
+    ai_retry_requested INTEGER,
+    ai_original_score INTEGER,
+    ai_retry_score INTEGER,
+    ai_selected_photo TEXT
 );
 """
 
@@ -94,5 +102,54 @@ def update_email_status(incident_id: str, status: str, error: str = "") -> None:
         conn.execute(
             "UPDATE incidents SET email_status = ?, email_error = ? WHERE id = ?",
             (status, error, incident_id),
+        )
+        conn.commit()
+
+
+def update_incident_ai_data(
+    incident_id: str,
+    ai_status: str,
+    ai_quality_score: int | None = None,
+    ai_issues: str | None = None,
+    ai_context_summary: str | None = None,
+    ai_retry_requested: int = 0,
+    ai_original_score: int | None = None,
+    ai_selected_photo: str | None = None
+) -> None:
+    """Update AI analysis results for an incident."""
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE incidents SET 
+                ai_status = ?,
+                ai_quality_score = ?,
+                ai_issues = ?,
+                ai_context_summary = ?,
+                ai_retry_requested = ?,
+                ai_original_score = ?,
+                ai_selected_photo = ?
+            WHERE id = ?
+            """,
+            (ai_status, ai_quality_score, ai_issues, ai_context_summary, 
+             ai_retry_requested, ai_original_score, ai_selected_photo, incident_id)
+        )
+        conn.commit()
+
+
+def update_incident_retry_data(
+    incident_id: str,
+    ai_retry_score: int,
+    ai_selected_photo: str
+) -> None:
+    """Update AI analysis results after a retry."""
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE incidents SET 
+                ai_retry_score = ?,
+                ai_selected_photo = ?
+            WHERE id = ?
+            """,
+            (ai_retry_score, ai_selected_photo, incident_id)
         )
         conn.commit()
