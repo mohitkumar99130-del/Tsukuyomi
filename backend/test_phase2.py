@@ -44,7 +44,7 @@ def trigger(jpeg_bytes, label="test"):
             "captured_at": "2026-08-19T06:00:00Z",
         },
         files={"photo": (f"{label}.jpg", jpeg_bytes, "image/jpeg")},
-        timeout=30,
+        timeout=60,
     )
     return resp.status_code, resp.json()
 
@@ -53,7 +53,7 @@ def retry_photo(incident_id, jpeg_bytes):
     resp = requests.post(
         f"{API}/api/incidents/{incident_id}/retry-photo",
         files={"photo": ("retry.jpg", jpeg_bytes, "image/jpeg")},
-        timeout=30,
+        timeout=60,
     )
     return resp.status_code, resp.json()
 

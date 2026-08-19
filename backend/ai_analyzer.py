@@ -129,7 +129,7 @@ def analyze_image(image_path: str) -> dict:
             ],
             config=types.GenerateContentConfig(
                 temperature=0.1,
-                max_output_tokens=512,
+                response_mime_type="application/json",
             ),
         )
 
